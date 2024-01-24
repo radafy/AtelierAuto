@@ -1,0 +1,1 @@
+Ce programme simple en langage C utilise la bibliothèque EV3 pour gérer la brique LEGO EV3. Il affiche "Hello World" sur l'écran, lit la valeur d'un capteur de couleur sur le port 1 et contrôle les moteurs B et C en les mettant en marche pendant quelques secondes.

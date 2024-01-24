@@ -1,0 +1,11 @@
+étape 1: (fichier KS.zcos)
+
+
+-On étudié le systeme k/s sur Xcos.
+-On a pris c=2, k=1 et on a testé la réponse indicielle. On atteint bien la sortie attendue.
+
+étape 2: (fichier Ks en Z.cos)
+
+-On a implémenté la transformée en Z du système en intégrant les blocs S/H 
+pour avoir un contrôleur discret ( on garde les mêmes coefficients pour ces cas).
+-On a testé la réponse de notre système avec différents signaux d'entrée (sin, échelon, carré).
