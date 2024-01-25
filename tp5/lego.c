@@ -45,21 +45,12 @@ int sign(float x) {
         return 1 - ((sign_bit & 0x1) << 1);
 }
 
-float pilote(int input) {
-        float w;
-        float u;
-        float v;
+void pilote(int input, float*u, float*w) {
         float err = 0.5 - input;
-        w = -5*err/v + u;
-        u = w + 5.17*err/v;
-       
 
-
-        return u;
+        (*u) = (*w) + 5.17*err/SPEED;
+        (*w) = -5*err/SPEED + (*u)*0.83;
 }
-
-
-
 
 void run(){
         set_tacho_command(lmotor1, "reset");
@@ -69,9 +60,11 @@ void run(){
         ///////////////////////////////////////////
         // run corps ici 
         uint8_t sensor_value;
+        float u = 0;
+        float w = 0;
         while(true){
                 get_sensor_value( 0, sn_sonar, &sensor_value);
-                float u = pilote(sensor_value);
+                pilote(sensor_value,&u,&w);
                 set_tacho_speed_sp(lmotor1, SPEED-u);
                 set_tacho_speed_sp(lmotor2, SPEED+u);
                 set_tacho_command(lmotor1, "run-forever");
@@ -130,6 +123,8 @@ void forcedTerminason(){
     }
     kill(PID,SIGKILL);// quand le capteur de contact est activé on kill le process en train de run
 }
+
+
 
 int main(void){
     init();
