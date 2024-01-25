@@ -46,8 +46,8 @@ int sign(float x) {
 }
 
 void pilote(int input, float*u, float*w) {
-        float err = 50 - input;
-
+        float err = 100.0 - (float)input;
+        printf("%d erreur\n", err);
         (*u) = (*w) + 5.17*err/SPEED;
         (*w) = -5*err/SPEED + (*u)*0.83;
 }
@@ -58,17 +58,25 @@ void run(){
 
         signal(2, handle_sigint);               // on ecoute si ctrl-c est execute
         ///////////////////////////////////////////
-        // run corps ici 
+        // run corps ici
         int sensor_value;
         float u = 0;
         float w = 0;
+        int chrono = 0;
         while(true){
-                get_sensor_value( 0, sn_sonar, &sensor_value);
+                if (chrono > 1000){
+                        get_sensor_value( 0, sn_sonar, &sensor_value);
+                        printf("Dans if %i\n",sensor_value);
+                        chrono=0;
+                }
+                else
+                        printf("Dans else\n");
                 pilote(sensor_value,&u,&w);
                 set_tacho_speed_sp(lmotor1, SPEED-u);
                 set_tacho_speed_sp(lmotor2, SPEED+u);
                 set_tacho_command(lmotor1, "run-forever");
                 set_tacho_command(lmotor2, "run-forever");
+                chrono += TIMESTEP;
                 Sleep(TIMESTEP);
         }
         //////////////////////////////////////////
