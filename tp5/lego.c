@@ -13,7 +13,7 @@
 #define Sleep( msec ) usleep(( msec ) * 1000 )
 #define TIMESTEP 100     // pas de temps
 #define TIMEOUT 30       // minuteur
-#define SPEED 120.0       // vitesse
+#define SPEED 200.0       // vitesse
 #define WHEEL_D 56       // diametre des roues
 #define WHEEL_B 132      // largeur du vehicule
 
@@ -46,7 +46,7 @@ int sign(float x) {
 }
 
 void pilote(int input, float*u, float*w) {
-        float err = 0.5 - input;
+        float err = 50 - input;
 
         (*u) = (*w) + 5.17*err/SPEED;
         (*w) = -5*err/SPEED + (*u)*0.83;
@@ -59,7 +59,7 @@ void run(){
         signal(2, handle_sigint);               // on ecoute si ctrl-c est execute
         ///////////////////////////////////////////
         // run corps ici 
-        uint8_t sensor_value;
+        int sensor_value;
         float u = 0;
         float w = 0;
         while(true){
