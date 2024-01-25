@@ -16,19 +16,16 @@
 #define SPEED 120.0       // vitesse
 #define WHEEL_D 56       // diametre des roues
 #define WHEEL_B 132      // largeur du vehicule
-#define NORTH 0
-#define SOUTH_EAST 135
-#define SOUTH 180
+
 
 /*
-1c. parcours avec la boussole
+2a Suivi de mur
 */
 
-uint8_t lmotor1, lmotor2, sn_compass, sn_touch;
+uint8_t lmotor1, lmotor2, sn_sonar, sn_touch;
 pid_t PID;
-float coeff = 4;
-void stop_robot(){
 
+void stop_robot(){
         set_tacho_command(lmotor1, "stop");
         set_tacho_command(lmotor2, "stop");
 }
@@ -42,66 +39,25 @@ void handle_sigint(){
         exit(2);
 }
 
-void move(uint8_t lmotor1, uint8_t lmotor2, float distance){ // distance en millimetres
-
-        set_tacho_speed_sp(lmotor1, SPEED);
-        set_tacho_speed_sp(lmotor2, SPEED);
-
-        set_tacho_position_sp(lmotor1, 360 * distance / (WHEEL_D * M_PI));
-        set_tacho_position_sp(lmotor2, 360 * distance / (WHEEL_D * M_PI));
-
-        set_tacho_command(lmotor1, "run-to-rel-pos");
-        set_tacho_command(lmotor2, "run-to-rel-pos");
-
-        FLAGS_T state1, state2;
-        get_tacho_state_flags(lmotor1, &state1);
-        get_tacho_state_flags(lmotor2, &state2);
-
-        while(state1 || state2){
-                get_tacho_state_flags(lmotor1, &state1);
-                get_tacho_state_flags(lmotor2, &state2);
-                printf("running\n");
-                Sleep(TIMESTEP);
-        }
-
-        set_tacho_position_sp(lmotor1, 0);
-        set_tacho_position_sp(lmotor2, 0);
-}
 
 int sign(float x) {
         int sign_bit = (*(unsigned int*)&x) >> 31;
         return 1 - ((sign_bit & 0x1) << 1);
 }
 
-float pilote(float r, float x) {
-        float err = fmod(r - x + 180,360) - 180;      // erreur
-
-        // calcul de la commande PID
-        float P = -coeff * err;
-
-        printf("P: %.2f\n", P);
-        return P;
-}
-
-void turn(uint8_t lmotor1, uint8_t lmotor2, uint8_t sn_compass, float dest_angle){ // angle de degres
-        float curr_angle;       // angle courant
-        float pre_angle;
+float pilote(int input) {
+        float w;
         float u;
-        get_sensor_value0(sn_compass, &curr_angle);
-        while ((curr_angle != dest_angle) && (pre_angle != dest_angle)) {
-                printf("curr_angle:  %2.f, dest_angle: %2.f\n", curr_angle, dest_angle);
-                pre_angle = curr_angle;
-                get_sensor_value0(sn_compass, &curr_angle);
-                u = pilote(dest_angle, curr_angle);
-                set_tacho_speed_sp(lmotor1, -u);
-                set_tacho_speed_sp(lmotor2,  u);
-                set_tacho_command(lmotor1, "run-forever");
-                set_tacho_command(lmotor2, "run-forever");
-                Sleep(TIMESTEP);
-        }
+        float v;
+        float err = 0.5 - input;
+        w = -5*err/v + u;
+        u = w + 5.17*err/v;
+       
 
-        stop_robot();
+
+        return u;
 }
+
 
 
 
@@ -110,19 +66,19 @@ void run(){
         set_tacho_command(lmotor2, "reset");
 
         signal(2, handle_sigint);               // on ecoute si ctrl-c est execute
-        printf("je tourne vers le sud");
-        turn(lmotor1, lmotor2, sn_compass, SOUTH);      // tourner vers le sud
-        printf("j'avvance");
-        move(lmotor1, lmotor2, 1000);                   // 1 metre vers le sud
-        printf("je tourne vers le sud est");
-        turn(lmotor1, lmotor2, sn_compass, SOUTH_EAST); // tourner vers sud-ouest
-        printf("j'avance");
-        move(lmotor1, lmotor2, 800);                    // 0.8 metres vers sud-ouest
-        printf("je tourne vers le nord");
-        turn(lmotor1, lmotor2, sn_compass, NORTH);      // tourner vers nord
-        printf("j'avance");
-        move(lmotor1, lmotor2, 600);                    // 0.6 m vers le nord
-
+        ///////////////////////////////////////////
+        // run corps ici 
+        uint8_t sensor_value;
+        while(true){
+                get_sensor_value( 0, sn_sonar, &sensor_value);
+                float u = pilote(sensor_value);
+                set_tacho_speed_sp(lmotor1, SPEED-u);
+                set_tacho_speed_sp(lmotor2, SPEED+u);
+                set_tacho_command(lmotor1, "run-forever");
+                set_tacho_command(lmotor2, "run-forever");
+                Sleep(TIMESTEP);
+        }
+        //////////////////////////////////////////
         stop_robot();
         kill(getppid(),SIGKILL);        //to terminate the parrent process listening to the touch sensor
 }
@@ -134,12 +90,12 @@ void init(){
     ev3_tacho_init();
 
     if (!ev3_search_sensor(LEGO_EV3_TOUCH, &sn_touch, 0)){
-            printf("COMPASS sensor is NOT found");
+            printf("TOUCH sensor is NOT found");
             exit(1);
     }
 
-    if (!ev3_search_sensor(HT_NXT_COMPASS, &sn_compass, 0)){
-            printf("COMPASS sensor is NOT found");
+    if (!ev3_search_sensor(LEGO_EV3_US, &sn_sonar, 0)){
+            printf("US sensor is NOT found");
             exit(1);
     }
 
@@ -154,12 +110,7 @@ void init(){
     }
 
     printf("Executez Ctrl + C pour arreter le robot.\n");
-    // on calibre la boussole
-    printf("Calibrage en cours...\n");
-    set_sensor_mode(sn_compass, "COMPASS");
     Sleep(2000);
-
-    printf("Calibrage termine.\n");
 
     printf("Demarrage en cours.\n");
     Sleep(2000);
