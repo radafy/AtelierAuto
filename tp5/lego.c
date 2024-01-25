@@ -46,8 +46,8 @@ int sign(float x) {
 }
 
 void pilote(int input, float*u, float*w) {
-        float err = 100.0 - (float)input;
-        printf("%d erreur\n", err);
+        float err = 100.0 - input;
+        printf("%f erreur\n", err);
         (*u) = (*w) + 5.17*err/SPEED;
         (*w) = -5*err/SPEED + (*u)*0.83;
 }
@@ -59,9 +59,9 @@ void run(){
         signal(2, handle_sigint);               // on ecoute si ctrl-c est execute
         ///////////////////////////////////////////
         // run corps ici
-        int sensor_value;
-        float u = 0;
-        float w = 0;
+        int sensor_value = 0;
+        float u = 0.0;
+        float w = 0.0;
         int chrono = 0;
         while(true){
                 if (chrono > 1000){
@@ -81,7 +81,7 @@ void run(){
         }
         //////////////////////////////////////////
         stop_robot();
-        kill(getppid(),SIGKILL);        //to terminate the parrent process listening to the touch sensor
+        kill(getppid(),SIGKILL);        //to terminate the parrent process listening to the touch sensor     
 }
 
 void init(){
